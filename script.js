@@ -44,7 +44,6 @@ let currentPlayerName = localStorage.getItem('kosmose_player_name') || 'Allu';
 let keysCount = parseInt(localStorage.getItem('kosmose_keys') || '3');
 let highScore = parseInt(localStorage.getItem('kosmose_highscore') || '0');
 
-document.getElementById('playerNameInput').value = currentPlayerName;
 document.getElementById('keyCount').innerText = keysCount;
 document.getElementById('topScoreNav').innerText = highScore;
 
@@ -94,6 +93,33 @@ const player = {
 let bullets = [], enemyBullets = [], enemies = [], powerUps = [], particles = [], stars = [];
 const keys = { left: false, right: false, shoot: false };
 
+// Login box shown on the start screen (replaces the old name input)
+function renderStartAuth() {
+  const box = document.getElementById('startAuthBox');
+  const startBtn = document.getElementById('startBtn');
+  if (!box) return;
+
+  if (currentUser) {
+    box.innerHTML = `
+      <div class="w-full bg-slate-800/90 border border-emerald-500/50 rounded-xl px-4 py-3 text-white orbitron flex items-center justify-between">
+        <span class="truncate"><span class="text-emerald-400">●</span> ${escapeHtml(currentPlayerName)}</span>
+        <button id="startLogoutBtn" class="text-xs text-red-400 hover:text-red-300 font-bold">Välju</button>
+      </div>`;
+    document.getElementById('startLogoutBtn').addEventListener('click', () => signOut(auth));
+    startBtn.disabled = false;
+  } else {
+    box.innerHTML = `
+      <button id="startLoginBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-xl text-sm font-bold orbitron transition flex items-center justify-center gap-2">
+        <i class="fa-brands fa-google"></i> Logi sisse (@voco.ee)
+      </button>
+      <p class="text-[11px] text-slate-500 mt-1">Mängimiseks pead sisse logima.</p>`;
+    document.getElementById('startLoginBtn').addEventListener('click', () => {
+      signInWithPopup(auth, googleProvider).catch((err) => console.error("Sisselogimise viga:", err));
+    });
+    startBtn.disabled = true;
+  }
+}
+
 // --- GOOGLE AUTHENTICATION (VOCO.EE RESTRICTION) ---
 onAuthStateChanged(auth, (user) => {
   const authContainer = document.getElementById('authContainer');
@@ -105,7 +131,7 @@ onAuthStateChanged(auth, (user) => {
     }
     currentUser = user;
     currentPlayerName = user.displayName || user.email.split('@')[0];
-    document.getElementById('playerNameInput').value = currentPlayerName;
+    renderStartAuth();
     
     if (authContainer) {
       authContainer.innerHTML = `
@@ -117,6 +143,7 @@ onAuthStateChanged(auth, (user) => {
     }
   } else {
     currentUser = null;
+    renderStartAuth();
     if (authContainer) {
       authContainer.innerHTML = `
         <button id="loginBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2">
@@ -291,8 +318,8 @@ async function saveScoreToFirestore(name, totalKillsCount, elapsedTimeInSeconds)
 }
 
 function startNewGame() {
-  const inputName = document.getElementById('playerNameInput').value.trim();
-  currentPlayerName = inputName || (currentUser ? currentUser.displayName : "Allu");
+  if (!currentUser) return; // login required
+  currentPlayerName = currentUser.displayName || currentUser.email.split('@')[0];
   localStorage.setItem('kosmose_player_name', currentPlayerName);
 
   score = 0; 
