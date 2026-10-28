@@ -3,7 +3,8 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase
 import { 
   getAuth, 
   GoogleAuthProvider, 
-  signInWithRedirect, 
+  signInWithRedirect,
+  getRedirectResult,
   signOut, 
   onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
@@ -33,6 +34,11 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+
+// Catch redirect authentication outcome on page load
+getRedirectResult(auth).catch((error) => {
+  console.error("Redirect sisselogimise viga:", error);
+});
 
 // --- STATE VARIABLES ---
 let currentUser = null;
@@ -94,7 +100,7 @@ const player = {
 let bullets = [], enemyBullets = [], enemies = [], powerUps = [], particles = [], stars = [];
 const keys = { left: false, right: false, shoot: false };
 
-// Start screen: lock the name to the Google account when logged in
+// Start screen UI sync
 function updateStartAuthUI() {
   const input = document.getElementById('playerNameInput');
   const hint = document.getElementById('authHint');
@@ -105,12 +111,12 @@ function updateStartAuthUI() {
     input.readOnly = true;
     hint.textContent = 'Sisse logitud – tulemus salvestatakse edetabelisse.';
     hint.className = 'text-[11px] text-emerald-400';
-    loginBtn.classList.add('hidden');
+    if (loginBtn) loginBtn.classList.add('hidden');
   } else {
     input.readOnly = false;
     hint.textContent = 'Edetabelisse pääsemiseks logi sisse.';
     hint.className = 'text-[11px] text-slate-500';
-    loginBtn.classList.remove('hidden');
+    if (loginBtn) loginBtn.classList.remove('hidden');
   }
 }
 
@@ -151,7 +157,7 @@ onAuthStateChanged(auth, (user) => {
           <i class="fa-brands fa-google"></i> Logi sisse (@voco.ee)
         </button>`;
       document.getElementById('loginBtn').addEventListener('click', () => {
-        signInWithPopup(auth, googleProvider).catch((err) => {
+        signInWithRedirect(auth, googleProvider).catch((err) => {
           console.error("Sisselogimise viga:", err);
         });
       });
