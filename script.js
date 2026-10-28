@@ -3,7 +3,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase
 import { 
   getAuth, 
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithRedirect, 
   signOut, 
   onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
@@ -115,7 +115,7 @@ function updateStartAuthUI() {
 }
 
 document.getElementById('startLoginBtn').addEventListener('click', () => {
-  signInWithPopup(auth, googleProvider).catch((err) => console.error("Sisselogimise viga:", err));
+  signInWithRedirect(auth, googleProvider).catch((err) => console.error("Sisselogimise viga:", err));
 });
 updateStartAuthUI();
 
